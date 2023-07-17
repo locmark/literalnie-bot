@@ -4,12 +4,23 @@
     import { createEventDispatcher } from 'svelte'
 
     const dispatch = createEventDispatcher<{
-        click: void
+        letter: void
         backspace: void
+        focus: void
     }>()
 
     export let letter: string = ''
     export let score: LetterScore = LetterScore.GRAY
+    export let active: boolean = false
+    export let showButtons: boolean = false
+
+    let input: HTMLInputElement
+
+    $: if (active && input) {
+        input.focus()
+    } else if (!active && input) {
+        input.blur()
+    }
 
     function onInput(event: Event & { currentTarget: EventTarget & HTMLInputElement }) {
         letter = (event.target as HTMLInputElement).value.toUpperCase()
@@ -19,24 +30,32 @@
         }
 
         // only allow letters
-        if (!letter.match(/[a-z ęóąśłżźćń]/i)) {
+        if (!letter.match(/[a-zęóąśłżźćń]/i)) {
             letter = ''
         }
 
         if (letter.length > 0) {
-            dispatch('click')
-        } else {
+            dispatch('letter')
+        }
+    }
+
+    function onKeydown(event: KeyboardEvent) {
+        if (event.key === 'Backspace') {
+            if (letter.length !== 0) {
+                event.preventDefault()
+            }
+            letter = ''
             dispatch('backspace')
         }
     }
 </script>
 
 <div class="container">
-    <ScoreButton color="#538d4e" />
+    <ScoreButton color="#538d4e" hidden={!showButtons} />
     <div class="input">
-        <input type="text" on:input={onInput} value={letter} />
+        <input type="text" on:input={onInput} value={letter} bind:this={input} on:keydown={onKeydown} on:focus />
     </div>
-    <ScoreButton color="#b59f3b" />
+    <ScoreButton color="#b59f3b" hidden={!showButtons} />
 </div>
 
 <style lang="scss">
